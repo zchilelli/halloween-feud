@@ -113,6 +113,25 @@ body.board .waiting{display:block}
 .fixrow .fixteam{display:flex;gap:4px;align-items:center;padding:4px 8px;border-radius:10px;border:2px solid var(--tc)}
 .fixrow .fixteam b{color:var(--tc);margin-right:4px}
 
+/* Host scoreboard */
+.scorebox{background:var(--night-2);border:3px solid var(--line);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.scorebox .head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.scorebox table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:1rem}
+.scorebox th{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px 6px;font-weight:800}
+.scorebox th:first-child,.scorebox td:first-child{text-align:left}
+.scorebox td{padding:6px;text-align:center;border-top:1px solid var(--line)}
+.scorebox td.tname{font-family:var(--display);font-weight:400;font-size:1.3rem;color:var(--tc);letter-spacing:.03em}
+.scorebox td.cur{background:rgba(255,216,77,.12)}
+.scorebox td.total{font-size:1.6rem;font-weight:900;color:var(--candy)}
+.scorebox td.ctl{white-space:nowrap}
+.scorebox td.ctl button{margin:0 2px}
+.scorebox .addbtn{background:var(--tc);color:var(--night);font-size:1rem;padding:.5em .9em}
+.scorebox .wrapx{overflow-x:auto}
+body.board .scorebox{display:none}
+body.board .team .score.hidden{display:none}
+body.board .team .score.hidden+.hiddenlabel{display:block}
+.hiddenlabel{display:none;font-size:.8rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
 /* Strike overlay */
 .strike-overlay{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:50;opacity:0;transition:opacity .15s}
 .strike-overlay.show{opacity:1}
@@ -175,7 +194,7 @@ body.board .bigtimer{display:block}
 
   <div class="panelbox onlyhost howto">
     <strong>Two screens (recommended):</strong> open the <a class="btnlink small" href="#host" target="_blank" rel="noopener">Host view</a> on your laptop screen and the <a class="btnlink small" href="#board" target="_blank" rel="noopener">Kids' board</a> on the projector. The host view shows you every answer; the kids' board only shows what you reveal. They stay in sync as long as both are open in the same browser on the same computer.<br><br>
-    <strong>How to run it:</strong> Read the question out loud. When a kid gives an answer that is on the board, click its tile (or press <kbd>1</kbd> to <kbd>5</kbd>). Wrong answer? Hit <strong>Strike</strong> (or <kbd>X</kbd>). When the round is over, click the team that earned the points. Made a mistake? <strong>Undo points</strong>, <strong>Redo this round</strong> (keeps earlier scores), and <strong>Fix scores</strong> are on the host bar. <strong>Start over</strong> wipes everything for the next class.
+    <strong>How to run it:</strong> Read the question out loud. When a kid gives an answer that is on the board, click its tile (or press <kbd>1</kbd> to <kbd>5</kbd>). Wrong answer? Hit <strong>Strike</strong> (or <kbd>X</kbd>). When the round is over, click the team that earned the points. Made a mistake? <strong>Undo last points</strong> and <strong>Redo this round</strong> are on the host bar, and the scoreboard under the teams has +5 / -5 buttons for quick fixes. Scores and the scoreboard are visible on your host view only. Scores are hidden from the kids' board until you click <strong>Show scores on kids' board</strong> (good for a dramatic reveal). <strong>Start over</strong> wipes everything for the next class.
   </div>
 
   <button class="bigstart onlyhost" id="startBtn">Let's play the Feud!</button>
@@ -193,6 +212,7 @@ body.board .bigtimer{display:block}
     <div class="pot">Points on the board <b id="pot">0</b></div>
     <div class="tiles" id="tiles"></div>
     <div class="teamsrow" id="teamsRow"></div>
+    <div class="scorebox onlyhost" id="scorebox"></div>
   </div>
 
   <div class="hostbar">
@@ -209,12 +229,11 @@ body.board .bigtimer{display:block}
     </div>
     <div class="row">
       <div class="grp"><span class="label">Give points to:</span><span id="awardBtns" style="display:contents"></span></div>
-      <button class="ghostbtn" id="undoAward">Undo points</button>
-      <button class="ghostbtn small" id="fixBtn">Fix scores</button>
+      <button class="ghostbtn" id="undoAward">Undo last points</button>
+      <button class="ghostbtn small" id="showScoresBtn">Show scores on kids' board</button>
       <span style="flex:1"></span>
       <button id="nextBtn">Next round</button>
     </div>
-    <div class="row fixrow" id="fixRow" hidden></div>
     <div class="hostkey" id="hostkey"></div>
   </div>
 </section>
@@ -261,16 +280,17 @@ body.board .bigtimer{display:block}
 <script>
 const ROUNDS=[
  {id:'see',q:'Name something you see on Halloween night.',a:['Kids in costumes',"Jack-o'-lanterns",'Candy','Spooky decorations','The moon']},
- {id:'costume',q:'Name a popular Halloween costume.',a:['Witch','Superhero','Ghost','Princess','Pumpkin']},
+ {id:'costume',q:'Name a popular Halloween costume.',a:['Witch','Superhero','Ghost','Princess','Skeleton']},
  {id:'treat',q:'Name a treat you hope to get while trick-or-treating.',a:['Chocolate bar','Lollipop','Gummy candy','Candy corn','Full-size candy bar']},
  {id:'carve',q:'Name something you carve or decorate for Halloween.',a:['Pumpkin','Your house','Cookies or cupcakes','Your classroom','Your costume']},
  {id:'witch',q:'Name something a witch might have.',a:['Broomstick','Pointy hat','Cauldron','Black cat','Magic wand']},
- {id:'party',q:'Name something you do at a Halloween party.',a:['Eat candy','Bob for apples','Play games','Dance','Show off costumes']},
+ {id:'farm',q:'Name something you do at a pumpkin farm in the fall.',a:['Pick a pumpkin','Go on a hayride','Walk through a corn maze','Eat apple cider donuts','Pet the animals']},
+ {id:'party',q:'Name something you do at a Halloween party.',a:['Eat candy','Play games','Dance','Costume contest','Decorate pumpkins']},
  {id:'creature',q:'Name a creature you might see as a Halloween decoration.',a:['Skeleton','Ghost','Spider','Bat','Mummy']},
  {id:'orange',q:'Name something orange.',a:['Pumpkin','Carrot','An orange (the fruit)','Fall leaves','Candy corn']},
  {id:'boo',q:'Tiebreaker: Name a word that rhymes with "boo."',a:['Shoe','Moo','Blue','Zoo','Glue']}
 ];
-const PTS=[10,9,8,7,6]; // rank 1 to 5
+const PTS=[20,10,10,5,5]; // rank 1 to 5
 const FAST=[
  {q:'Name a color you think of on Halloween',a:[['Orange',10],['Black',8],['Purple',6]]},
  {q:'Name a sound you hear in a haunted house',a:[['Creaky door',10],['Boo!',8],['Howling',6]]},
@@ -279,7 +299,7 @@ const FAST=[
  {q:'Name a Halloween word that starts with S',a:[['Spooky',10],['Skeleton',8],['Spider',6]]}
 ];
 const FM_TARGET=50;
-const DEFAULT_PICK=['see','costume','treat','carve','witch','party','creature','orange'];
+const DEFAULT_PICK=['see','costume','treat','carve','witch','farm','creature','orange'];
 const TEAM_DEFAULTS=[['Team Pumpkins','var(--pumpkin)'],['Team Ghosts','var(--ghost)'],['Team Bats','var(--bat)'],['Team Witches','var(--witch)'],['Team Skeletons','var(--bones)']];
 
 /* Mode: #host shows answers, #board is the kids' projector view, no hash = both */
@@ -290,7 +310,7 @@ window.addEventListener('hashchange',()=>location.reload());
 let S=null;
 const $=id=>document.getElementById(id);
 function freshState(){
-  return {screen:'setup',teamCount:2,names:TEAM_DEFAULTS.map(t=>t[0]),picked:DEFAULT_PICK.slice(),round:0,scores:[0,0,0,0,0],
+  return {screen:'setup',teamCount:2,names:TEAM_DEFAULTS.map(t=>t[0]),picked:DEFAULT_PICK.slice(),round:0,scores:[0,0,0,0,0],log:[],showScores:false,
     revealed:[],strikes:[0,0,0,0,0],playing:null,awarded:false,lastAward:null,sound:true,
     fm:{team:0,picks:[[null,null,null,null,null],[null,null,null,null,null]],timeLeft:20}};
 }
@@ -309,7 +329,14 @@ function beep(type){
     const t=AC.currentTime;
     const tone=(f,start,len,gain,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t+start);g.gain.exponentialRampToValueAtTime(gain,t+start+.02);g.gain.exponentialRampToValueAtTime(.0001,t+start+len);o.connect(g).connect(AC.destination);o.start(t+start);o.stop(t+start+len+.05)};
     if(type==='ding'){tone(880,0,.5,.3,'sine');tone(1320,.08,.5,.3,'sine')}
-    else if(type==='buzz'){const o=AC.createOscillator(),g=AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(90,t+.6);g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.0001,t+.65);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.7)}
+    else if(type==='buzz'){
+      /* Spooky strike: thunder crack + ghost wail + low rumble, about 1.4s */
+      const master=AC.createGain();master.gain.value=.9;master.connect(AC.destination);
+      const n=AC.sampleRate*0.5,buf=AC.createBuffer(1,n,AC.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.5);
+      const src=AC.createBufferSource();src.buffer=buf;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(1800,t);lp.frequency.exponentialRampToValueAtTime(200,t+.5);const ng=AC.createGain();ng.gain.value=.6;src.connect(lp).connect(ng).connect(master);src.start(t);
+      const w=AC.createOscillator(),wg=AC.createGain(),vib=AC.createOscillator(),vg=AC.createGain();w.type='sawtooth';w.frequency.setValueAtTime(520,t+.05);w.frequency.exponentialRampToValueAtTime(110,t+1.3);vib.frequency.value=6;vg.gain.value=18;vib.connect(vg).connect(w.frequency);wg.gain.setValueAtTime(.0001,t);wg.gain.exponentialRampToValueAtTime(.22,t+.08);wg.gain.exponentialRampToValueAtTime(.0001,t+1.4);const wf=AC.createBiquadFilter();wf.type='lowpass';wf.frequency.value=1200;w.connect(wf).connect(wg).connect(master);vib.start(t);w.start(t);w.stop(t+1.45);vib.stop(t+1.45);
+      const r=AC.createOscillator(),rg=AC.createGain();r.type='triangle';r.frequency.setValueAtTime(55,t);r.frequency.exponentialRampToValueAtTime(38,t+1.2);rg.gain.setValueAtTime(.0001,t);rg.gain.exponentialRampToValueAtTime(.35,t+.05);rg.gain.exponentialRampToValueAtTime(.0001,t+1.3);r.connect(rg).connect(master);r.start(t);r.stop(t+1.35);
+    }
     else if(type==='win'){[523,659,784,1046].forEach((f,i)=>tone(f,i*.15,.6,.3,'triangle'))}
   }catch(e){}
 }
@@ -345,13 +372,34 @@ $('startBtn').addEventListener('click',()=>{
   for(let i=0;i<N();i++){S.names[i]=($('tname'+i).value.trim())||TEAM_DEFAULTS[i][0]}
   if(S.picked.length===0)S.picked=DEFAULT_PICK.slice();
   S.picked=ROUNDS.map(r=>r.id).filter(id=>S.picked.includes(id));
-  S.round=0;S.scores=[0,0,0,0,0];S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;S.lastAward=null;
+  S.round=0;S.scores=[0,0,0,0,0];S.log=[];S.showScores=false;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;S.lastAward=null;
   setMsg('Read the question, then run the Face-Off.');
   show('game');render();
 });
 
 /* Game render */
 function setMsg(t){$('msg').textContent=t}
+function recalc(){S.scores=[0,0,0,0,0];(S.log||[]).forEach(e=>{S.scores[e.team]+=e.pts})}
+function addLog(team,pts,round,kind){S.log=S.log||[];S.log.push({team,pts,round,kind});recalc()}
+function renderScorebox(){
+  const box=$('scorebox');if(!box)return;const R=roundsPicked().length;
+  let h='<div class="head"><span class="label">Scoreboard (host only)</span><span class="label">Round '+(S.round+1)+' of '+R+(isDouble()?' &middot; DOUBLE':'')+'</span></div><div class="wrapx"><table><thead><tr><th>Team</th>';
+  for(let r=0;r<R;r++)h+='<th>R'+(r+1)+'</th>';
+  h+='<th>Fixes</th><th>Total</th><th>Add this round</th><th>Quick fix</th></tr></thead><tbody>';
+  for(let i=0;i<N();i++){
+    h+='<tr style="--tc:'+color(i)+'"><td class="tname">'+S.names[i].replace(/</g,'&lt;')+'</td>';
+    for(let r=0;r<R;r++){const v=(S.log||[]).filter(e=>e.team===i&&e.round===r&&e.kind==='round').reduce((a,e)=>a+e.pts,0);h+='<td class="'+(r===S.round?'cur':'')+'">'+(v||(r<S.round||r===S.round?'0':''))+'</td>'}
+    const fx=(S.log||[]).filter(e=>e.team===i&&e.kind==='fix').reduce((a,e)=>a+e.pts,0);
+    h+='<td>'+(fx>0?'+':'')+fx+'</td><td class="total">'+S.scores[i]+'</td>';
+    h+='<td class="ctl"><button class="addbtn" data-award="'+i+'"'+(S.awarded?' disabled':'')+'>+ <span id="potbtn'+i+'">0</span></button></td>';
+    h+='<td class="ctl"><button class="ghostbtn tiny" data-fix="'+i+',-5">-5</button><button class="ghostbtn tiny" data-fix="'+i+',5">+5</button></td></tr>';
+  }
+  h+='</tbody></table></div>';
+  box.innerHTML=h;
+  const pot=Number($('pot').textContent);box.querySelectorAll('[id^=potbtn]').forEach(e=>e.textContent=pot);
+  box.querySelectorAll('[data-award]').forEach(b=>b.addEventListener('click',()=>award(Number(b.dataset.award))));
+  box.querySelectorAll('[data-fix]').forEach(b=>b.addEventListener('click',()=>{const [t,d]=b.dataset.fix.split(',').map(Number);if(S.scores[t]+d<0)return;addLog(t,d,S.round,'fix');setMsg(S.names[t]+' now has '+S.scores[t]+'.');render()}));
+}
 function teamButton(i,label,onclick){const b=document.createElement('button');b.className='teambtn';b.style.setProperty('--tc',color(i));b.textContent=label;b.addEventListener('click',onclick);return b}
 function render(){
   const r=cur();if(!r){show('winner');renderWinner();return}
@@ -370,22 +418,20 @@ function render(){
   const row=$('teamsRow');row.innerHTML='';
   for(let i=0;i<N();i++){
     const d=document.createElement('div');d.className='team'+(S.playing===i?' active':'');d.style.setProperty('--tc',color(i));
-    d.innerHTML='<div class="name"></div><div class="score"></div><div class="turn"></div><div class="strikes"><span>X</span><span>X</span><span>X</span></div>';
+    d.innerHTML='<div class="name"></div><div class="score'+(S.showScores?'':' hidden')+'"></div><div class="hiddenlabel">Scores coming soon</div><div class="turn"></div><div class="strikes"><span>X</span><span>X</span><span>X</span></div>';
     d.querySelector('.name').textContent=S.names[i];d.querySelector('.score').textContent=S.scores[i];
     d.querySelector('.turn').textContent=S.playing===i?'Playing now':'';
     const sp=d.querySelectorAll('.strikes span');for(let k=0;k<3;k++)sp[k].classList.toggle('on',k<S.strikes[i]);
     row.append(d);
   }
-  const pb=$('playBtns');pb.innerHTML='';const ab=$('awardBtns');ab.innerHTML='';const fx=$('fixRow');fx.innerHTML='';
+  const pb=$('playBtns');pb.innerHTML='';const ab=$('awardBtns');ab.innerHTML='';
   for(let i=0;i<N();i++){
     pb.append(teamButton(i,shortName(i),()=>{S.playing=i;setMsg(S.names[i]+' is playing. Go down the line!');render()}));
     const a=teamButton(i,shortName(i),()=>award(i));a.disabled=S.awarded;ab.append(a);
-    const ft=document.createElement('div');ft.className='fixteam';ft.style.setProperty('--tc',color(i));
-    const nm=document.createElement('b');nm.textContent=shortName(i);ft.append(nm);
-    [-5,-1,1,5].forEach(dlt=>{const b=document.createElement('button');b.className='ghostbtn tiny';b.textContent=(dlt>0?'+':'')+dlt;b.addEventListener('click',()=>{S.scores[i]=Math.max(0,S.scores[i]+dlt);setMsg(S.names[i]+' now has '+S.scores[i]+'.');render()});ft.append(b)});
-    fx.append(ft);
   }
   $('undoAward').disabled=!S.lastAward;
+  $('showScoresBtn').textContent=(S.showScores?'Hide':'Show')+' scores on kids\' board';
+  renderScorebox();
   $('hostkey').innerHTML='<b>Answer key:</b> '+r.a.map((a,i)=>(i+1)+'. '+a+' ('+PTS[i]*mult()+')').join(' &nbsp;&middot;&nbsp; ');
   $('soundBtn').textContent='Sound: '+(S.sound?'on':'off');
   save();
@@ -407,14 +453,14 @@ function strike(){
 }
 function award(team){
   if(S.awarded)return;const pot=Number($('pot').textContent);
-  S.scores[team]+=pot;S.awarded=true;S.lastAward={team,pts:pot};beep('win');
+  addLog(team,pot,S.round,'round');S.awarded=true;S.lastAward={team,pts:pot};beep('win');
   setMsg(pot+' points to '+S.names[team]+'! Click Next round when you are ready.');render();
 }
 $('strikeBtn').addEventListener('click',strike);
 $('revealAll').addEventListener('click',()=>{const r=cur();r.a.forEach((_,i)=>{if(!S.revealed.includes(i))S.revealed.push(i)});beep('ding');setMsg("Let's see what else was on the board!");render()});
-$('undoAward').addEventListener('click',()=>{if(!S.lastAward)return;S.scores[S.lastAward.team]-=S.lastAward.pts;setMsg('Took back '+S.lastAward.pts+' points from '+S.names[S.lastAward.team]+'.');S.lastAward=null;S.awarded=false;render()});
-$('resetRound').addEventListener('click',()=>{if(S.lastAward&&S.awarded){S.scores[S.lastAward.team]-=S.lastAward.pts}S.lastAward=null;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;setMsg('Round reset. Earlier scores are safe. Read the question again!');render()});
-$('fixBtn').addEventListener('click',()=>{$('fixRow').hidden=!$('fixRow').hidden});
+$('undoAward').addEventListener('click',()=>{if(!S.lastAward)return;const idx=(S.log||[]).map(e=>e.kind).lastIndexOf('round');if(idx>=0)S.log.splice(idx,1);recalc();setMsg('Took back '+S.lastAward.pts+' points from '+S.names[S.lastAward.team]+'.');S.lastAward=null;S.awarded=false;render()});
+$('resetRound').addEventListener('click',()=>{S.log=(S.log||[]).filter(e=>!(e.round===S.round&&e.kind==='round'));recalc();S.lastAward=null;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;setMsg('Round reset. Earlier scores are safe. Read the question again!');render()});
+$('showScoresBtn').addEventListener('click',()=>{S.showScores=!S.showScores;render()});
 $('nextBtn').addEventListener('click',()=>{
   if(S.round+1>=roundsPicked().length){show('winner');renderWinner();return}
   S.round++;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;S.lastAward=null;
@@ -434,6 +480,7 @@ document.addEventListener('keydown',e=>{
 
 /* Winner */
 function renderWinner(){
+  S.showScores=true;
   const sc=S.scores.slice(0,N());const top=Math.max(...sc);const winners=[];sc.forEach((v,i)=>{if(v===top)winners.push(i)});
   $('winText').textContent=winners.length>1?"It's a tie between "+winners.map(i=>S.names[i]).join(' and ')+'! Play the tiebreaker round.':S.names[winners[0]]+' wins!';
   const fs=$('finalScores');fs.innerHTML='';
@@ -505,6 +552,8 @@ window.addEventListener('storage',e=>{
   if(!S.fm)S.fm={team:0,picks:[[null,null,null,null,null],[null,null,null,null,null]],timeLeft:20};
   if(!S.teamCount)S.teamCount=2;while(S.scores.length<5)S.scores.push(0);while(S.strikes.length<5)S.strikes.push(0);while(S.names.length<5)S.names.push(TEAM_DEFAULTS[S.names.length][0]);
   S.revealed=S.revealed.filter(i=>i<5);
+  if(!S.log){S.log=[];S.scores.forEach((v,i)=>{if(v)S.log.push({team:i,pts:v,round:0,kind:'fix'})})}
+  if(S.showScores===undefined)S.showScores=false;
   buildSetup();
   $('modetag').textContent=MODE==='host'?'This is the host view. Only you see the answers.':(MODE==='both'?'Single-screen mode: this window shows everything.':'');
   const sc=S.screen||'setup';show(sc);
