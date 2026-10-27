@@ -96,6 +96,36 @@ h1{font-family:var(--display);font-weight:400;letter-spacing:.04em;margin:0;colo
 .team .strikes span{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;font-weight:900;color:transparent}
 .team .strikes span.on{background:var(--strike);border-color:var(--strike);color:#fff}
 
+/* Board (projector) scaling: sized in vh so one round always fits on one screen, 1024x768 up to 1080p */
+body.board .wrap{max-width:1700px;gap:1vh;padding-top:.8vh;padding-bottom:.8vh}
+body.board .topbar h1{font-size:clamp(1.4rem,4vh,2.6rem)}
+body.board .center{gap:1.2vh}
+body.board .question{font-size:clamp(1.3rem,4.6vh,3rem);min-height:0;padding:1.6vh 24px}
+body.board .pot{font-size:clamp(.8rem,2vh,1.2rem)}
+body.board .pot b{font-size:clamp(1.4rem,4vh,2.8rem)}
+body.board .tiles{max-width:1100px;gap:1.1vh}
+body.board .tile{height:clamp(44px,8.6vh,110px)}
+body.board .tile .face{font-size:clamp(1.1rem,4vh,2.5rem);padding:0 24px}
+body.board .tile .front{font-size:clamp(1.3rem,4.6vh,3.2rem)}
+body.board .tile .back .pts{font-size:clamp(1.1rem,3.8vh,2.4rem)}
+body.board .teamsrow{gap:1.2vh}
+body.board .team{padding:1vh 10px;gap:.3vh;border-radius:14px}
+body.board .teamsrow{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+body.board .team .name{font-size:clamp(1.1rem,4vh,2.8rem)}
+body.board .team .score,body.board .team .hiddenlabel{font-size:clamp(2rem,8vh,5.5rem)}
+body.board .team .turn{font-size:clamp(.7rem,1.6vh,1rem);min-height:1.6vh}
+body.board .team .strikes{min-height:0}
+body.board .team .strikes span{width:clamp(26px,5vh,46px);height:clamp(26px,5vh,46px);font-size:clamp(1rem,3vh,1.6rem);border-radius:8px}
+body.board .fm .q{font-size:clamp(1.1rem,3.2vh,2rem);min-height:10vh}
+body.board .fm .cell{min-height:10vh;justify-content:center}
+body.board .fm .cell .ans{font-size:clamp(1.2rem,3.6vh,2.2rem)}
+body.board .fm .hdr{font-size:1rem}
+body.board .fm .total{font-size:1.5rem;padding:1.5vh}
+body.board .fm .total b{font-size:clamp(2rem,7vh,4rem)}
+body.board .bigtimer{font-size:clamp(2.5rem,9vh,5rem);line-height:1}
+body.board .fm .cell.veil .ans{visibility:hidden}
+body.board .fm .cell.veil::after{content:'hidden';color:var(--muted);font-size:1rem;letter-spacing:.12em;text-transform:uppercase;text-align:center}
+
 /* Host and board modes */
 body.host .tile .front{flex-direction:column;justify-content:center;padding-bottom:14px}
 body.host .tile .front .peek{display:block}
@@ -129,7 +159,10 @@ body.board .waiting{display:block}
 body.board .scorebox{display:none}
 body.board .team .score.hidden{display:none}
 body.board .team .score.hidden+.hiddenlabel{display:block}
-.hiddenlabel{display:none;font-size:.8rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.hiddenlabel{display:none;font-size:clamp(2.4rem,5.5vw,4.2rem);font-weight:900;line-height:1;color:var(--muted)}
+
+.soundhint{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:40;background:var(--candy);color:var(--night);font-size:1rem;animation:pulse 1.4s infinite}
+body:not(.board) .soundhint{display:none}
 
 /* Strike overlay */
 .strike-overlay{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:50;opacity:0;transition:opacity .15s}
@@ -229,7 +262,7 @@ body.board .bigtimer{display:block}
     <div class="row">
       <div class="grp"><span class="label">Steal the board:</span><span id="awardBtns" style="display:contents"></span></div>
       <button class="ghostbtn" id="undoAward">Undo last answer</button>
-      <span class="label" id="unclaimed" hidden style="color:var(--strike);width:auto">Tiles flipped with no team selected = no points</span>
+      <span class="label" id="unclaimed" hidden style="color:var(--strike);width:auto">Flipped tiles with no team yet: pick a Playing team and they get those points</span>
       <button class="ghostbtn small" id="showScoresBtn">Show scores on kids' board</button>
       <span style="flex:1"></span>
       <button id="nextBtn">Next round</button>
@@ -247,11 +280,12 @@ body.board .bigtimer{display:block}
   <div class="bigtimer" id="bigtimer">20</div>
   <div class="fm" id="fmGrid"></div>
   <div class="hostbar">
-    <div class="msg" id="fmMsg">Player 1 answers all five in 20 seconds. Player 2 covers their ears!</div>
+    <div class="msg" id="fmMsg">Player 1 answers all five in 20 seconds while Player 2 waits in the hall. Before Player 2 comes back, click Hide Player 1 answers.</div>
     <div class="row">
       <span class="timer" id="timer">20</span>
       <button id="timerBtn">Start 20 seconds</button>
       <button class="ghostbtn" id="timerReset">Reset timer</button>
+      <button class="ghostbtn small" id="hideP1Btn">Hide Player 1 answers on board</button>
       <span style="flex:1"></span>
       <button class="ghostbtn" id="fmBack">Back to scores</button>
       <button class="ghostbtn small" id="resetBtn2">Start over</button>
@@ -276,6 +310,7 @@ body.board .bigtimer{display:block}
 </div>
 
 <div class="strike-overlay" id="strikeOverlay"><div class="x">X</div></div>
+<button class="soundhint" id="soundhint" hidden>Click once to turn on sound</button>
 
 <script>
 const ROUNDS=[
@@ -318,14 +353,20 @@ function save(){if(MODE==='board')return;try{localStorage.setItem('hfeud',JSON.s
 function load(){try{const v=localStorage.getItem('hfeud');if(v){const o=JSON.parse(v);if(o&&o.screen&&o.teamCount)return o}}catch(e){}return null}
 const N=()=>S.teamCount;
 const color=i=>TEAM_DEFAULTS[i][1];
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function shortName(i){return S.names[i].replace(/^team\s+/i,'')}
 
 /* Sounds */
-let AC=null;
+let AC=null,boardAlive=0,bc=null;
+try{bc=new BroadcastChannel('hfeud');bc.onmessage=e=>{if(e.data==='board-alive')boardAlive=Date.now()}}catch(e){}
+if(MODE==='board'){setInterval(()=>{try{bc&&bc.postMessage('board-alive')}catch(e){}},1500)}
+function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const h=$('soundhint');if(h&&AC.state!=='suspended')h.hidden=true}catch(e){}}
+window.addEventListener('pointerdown',unlockAudio);window.addEventListener('keydown',unlockAudio);
 function beep(type){
   if(!S.sound)return;
+  if(MODE==='host'&&Date.now()-boardAlive<4000)return; /* board window is open on this computer: let it carry the sound */
   try{
-    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
     const t=AC.currentTime;
     const tone=(f,start,len,gain,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t+start);g.gain.exponentialRampToValueAtTime(gain,t+start+.02);g.gain.exponentialRampToValueAtTime(.0001,t+start+len);o.connect(g).connect(AC.destination);o.start(t+start);o.stop(t+start+len+.05)};
     if(type==='ding'){tone(880,0,.5,.3,'sine');tone(1320,.08,.5,.3,'sine')}
@@ -388,7 +429,7 @@ function renderScorebox(){
   for(let r=0;r<R;r++)h+='<th>R'+(r+1)+'</th>';
   h+='<th>Fixes</th><th>Total</th><th>Manual fix</th></tr></thead><tbody>';
   for(let i=0;i<N();i++){
-    h+='<tr style="--tc:'+color(i)+'"><td class="tname">'+S.names[i].replace(/</g,'&lt;')+'</td>';
+    h+='<tr style="--tc:'+color(i)+'"><td class="tname">'+esc(S.names[i])+'</td>';
     for(let r=0;r<R;r++){const v=(S.log||[]).filter(e=>e.team===i&&e.round===r&&e.kind!=='fix').reduce((a,e)=>a+e.pts,0);h+='<td class="'+(r===S.round?'cur':'')+'">'+(v||(r<S.round||r===S.round?'0':''))+'</td>'}
     const fx=(S.log||[]).filter(e=>e.team===i&&e.kind==='fix').reduce((a,e)=>a+e.pts,0);
     h+='<td>'+(fx>0?'+':'')+fx+'</td><td class="total">'+S.scores[i]+'</td>';
@@ -416,7 +457,7 @@ function render(){
   const row=$('teamsRow');row.innerHTML='';
   for(let i=0;i<N();i++){
     const d=document.createElement('div');d.className='team'+(S.playing===i?' active':'');d.style.setProperty('--tc',color(i));
-    d.innerHTML='<div class="name"></div><div class="score'+(S.showScores?'':' hidden')+'"></div><div class="hiddenlabel">Scores coming soon</div><div class="turn"></div><div class="strikes"><span>X</span><span>X</span><span>X</span></div>';
+    d.innerHTML='<div class="name"></div><div class="score'+(S.showScores?'':' hidden')+'"></div><div class="hiddenlabel">???</div><div class="turn"></div><div class="strikes"><span>X</span><span>X</span><span>X</span></div>';
     d.querySelector('.name').textContent=S.names[i];d.querySelector('.score').textContent=S.scores[i];
     d.querySelector('.turn').textContent=S.playing===i?'Playing now':'';
     const sp=d.querySelectorAll('.strikes span');for(let k=0;k<3;k++)sp[k].classList.toggle('on',k<S.strikes[i]);
@@ -424,12 +465,12 @@ function render(){
   }
   const pb=$('playBtns');pb.innerHTML='';const ab=$('awardBtns');ab.innerHTML='';
   for(let i=0;i<N();i++){
-    pb.append(teamButton(i,shortName(i),()=>{S.playing=i;setMsg(S.names[i]+' is playing. Go down the line!');render()}));
+    pb.append(teamButton(i,shortName(i),()=>selectTeam(i)));
     const st=teamButton(i,shortName(i),()=>steal(i));st.disabled=(S.playing===i)||roundPts()===0;ab.append(st);
   }
   $('undoAward').disabled=!(S.log||[]).some(e=>e.round===S.round&&e.kind!=='fix');
   const unclaimed=S.revealed.filter(i=>!(S.log||[]).some(e=>e.round===S.round&&e.kind==='answer'&&e.tile===i)).length;
-  $('unclaimed').hidden=unclaimed===0||S.playing!==null;
+  $('unclaimed').hidden=unclaimed===0;
   $('showScoresBtn').textContent=(S.showScores?'Hide':'Show')+' scores on kids\' board';
   renderScorebox();
   $('hostkey').innerHTML='<b>Answer key:</b> '+r.a.map((a,i)=>(i+1)+'. '+a+' ('+PTS[i]*mult()+')').join(' &nbsp;&middot;&nbsp; ');
@@ -443,8 +484,14 @@ function reveal(i){
     S.log=S.log||[];S.log.push({team:S.playing,pts:p,round:S.round,kind:'answer',tile:i});recalc();
     if(S.revealed.length===r.a.length){beep('win');setMsg('Board cleared! '+S.names[S.playing]+' sweeps the round with '+roundPts()+' points.')}
     else setMsg('"'+r.a[i]+'" for '+p+' points to '+S.names[S.playing]+'!');
-  }else setMsg('"'+r.a[i]+'" is on the board ('+p+'), but no team is selected, so nobody got the points. Pick a team first, or use Undo.');
+  }else setMsg('"'+r.a[i]+'" is on the board for '+p+'. Pick the Playing team and they get it.');
   render();
+}
+function selectTeam(i){
+  S.playing=i;
+  const un=S.revealed.filter(t=>!(S.log||[]).some(e=>e.round===S.round&&e.kind==='answer'&&e.tile===t));
+  let got=0;un.forEach(t=>{const p=PTS[t]*mult();S.log=S.log||[];S.log.push({team:i,pts:p,round:S.round,kind:'answer',tile:t});got+=p});recalc();
+  setMsg(S.names[i]+' is playing. '+(got?'The '+got+' points already on the board go to them. ':'')+'Go down the line!');render();
 }
 function steal(team){
   const pts=roundPts();if(!pts)return;
@@ -454,8 +501,8 @@ function steal(team){
   recalc();beep('win');setMsg('STEAL! '+S.names[team]+' takes all '+pts+' points on the board!');S.playing=team;render();
 }
 function strike(){
-  flashStrike();const team=S.playing;
-  if(team===null){setMsg('BZZZ! Pick which team is playing so strikes count against them.');return}
+  S.strikeFlash=(S.strikeFlash||0)+1;flashStrike();const team=S.playing;
+  if(team===null){setMsg('BZZZ! Pick which team is playing so strikes count against them.');save();return}
   S.strikes[team]=Math.min(3,S.strikes[team]+1);
   if(S.strikes[team]===3)setMsg('Three strikes for '+S.names[team]+'! Another team huddles 10 seconds, captain gives ONE guess. If it is on the board, click Steal for that team.');
   else setMsg('Strike '+S.strikes[team]+' for '+S.names[team]+'.');
@@ -479,7 +526,7 @@ $('nextBtn').addEventListener('click',()=>{
   $('hostkey').classList.remove('show');render();
 });
 $('keyBtn').addEventListener('click',()=>$('hostkey').classList.toggle('show'));
-$('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;render()});
+$('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;unlockAudio();render()});
 function armReset(btn){btn.addEventListener('click',()=>{if(btn.textContent==='Really start over?'){S=freshState();buildSetup();show('setup');btn.textContent='Start over'}else{btn.textContent='Really start over?';setTimeout(()=>btn.textContent='Start over',2500)}})}
 armReset($('resetBtn'));armReset($('resetBtn2'));
 document.addEventListener('keydown',e=>{
@@ -496,9 +543,11 @@ function renderWinner(){
   $('winText').textContent=winners.length>1?"It's a tie between "+winners.map(i=>S.names[i]).join(' and ')+'! Play the tiebreaker round.':S.names[winners[0]]+' wins!';
   const fs=$('finalScores');fs.innerHTML='';
   for(let i=0;i<N();i++){const d=document.createElement('div');d.style.setProperty('--tc',color(i));d.textContent=S.names[i]+': '+S.scores[i];fs.append(d)}
-  S.fm.team=winners[0];save();
+  if(!S.fm.done)S.fm.team=winners[0];
+  if(S.fm.done)$('winText').textContent='Happy Halloween, '+S.names[S.fm.team]+'!';
+  save();
 }
-$('playFM').addEventListener('click',()=>{S.fm.picks=[[null,null,null,null,null],[null,null,null,null,null]];S.fm.cheered=false;S.fm.timeLeft=20;timeLeft=20;show('fast');renderFM();drawTimer()});
+$('playFM').addEventListener('click',()=>{S.fm.done=false;S.fm.hideP1=false;S.fm.picks=[[null,null,null,null,null],[null,null,null,null,null]];S.fm.cheered=false;S.fm.timeLeft=20;timeLeft=20;show('fast');renderFM();drawTimer()});
 $('backToBoard').addEventListener('click',()=>{show('game');render()});
 $('againBtn').addEventListener('click',()=>{const keep={teamCount:S.teamCount,names:S.names,picked:S.picked,sound:S.sound};S=Object.assign(freshState(),keep);buildSetup();show('setup')});
 
@@ -512,7 +561,7 @@ function renderFM(){
   FAST.forEach((f,qi)=>{
     const q=document.createElement('div');q.className='q';q.textContent=(qi+1)+'. '+f.q;g.append(q);
     [0,1].forEach(p=>{
-      const cell=document.createElement('div');cell.className='cell';const pick=S.fm.picks[p][qi];
+      const cell=document.createElement('div');cell.className='cell'+(p===0&&S.fm.hideP1?' veil':'');const pick=S.fm.picks[p][qi];
       const ans=document.createElement('div');ans.className='ans';
       if(pick==='nope'){ans.innerHTML='<span>Not on the list</span><span class="pts">0</span>'}
       else if(pick!==null){const a=f.a[pick];ans.innerHTML='<span></span><span class="pts"></span>';ans.children[0].textContent=a[0];ans.children[1].textContent=a[1];total+=a[1]}
@@ -528,6 +577,7 @@ function renderFM(){
   const t=document.createElement('div');t.className='total'+(total>=FM_TARGET?' win':'');
   t.innerHTML='<span>Fast Money total</span><b>'+total+'</b><span>'+(total>=FM_TARGET?'They did it! Fast Money champions!':'Need '+(FM_TARGET-total)+' more')+'</span>';
   g.append(t);
+  $('hideP1Btn').textContent=(S.fm.hideP1?'Show':'Hide')+' Player 1 answers on board';
   $('fmMsg').textContent=total>=FM_TARGET?'Everybody cheer!':'Click the answer each player gives, or Nope if it is not on the list.';
   if(total>=FM_TARGET&&!S.fm.cheered){S.fm.cheered=true;beep('win')}
   save();
@@ -543,15 +593,16 @@ $('timerBtn').addEventListener('click',()=>{
   if(timeLeft<=0)timeLeft=20;$('timerBtn').textContent='Pause';
   timerId=setInterval(()=>{timeLeft--;drawTimer();if(timeLeft<=0){clearInterval(timerId);timerId=null;$('timerBtn').textContent='Start 20 seconds';beep('buzz')}},1000);
 });
+$('hideP1Btn').addEventListener('click',()=>{S.fm.hideP1=!S.fm.hideP1;renderFM()});
 $('timerReset').addEventListener('click',()=>{clearInterval(timerId);timerId=null;timeLeft=20;drawTimer();$('timerBtn').textContent='Start 20 seconds'});
-$('fmBack').addEventListener('click',()=>{clearInterval(timerId);timerId=null;show('winner');renderWinner()});
-$('fmDone').addEventListener('click',()=>{clearInterval(timerId);timerId=null;show('winner');$('winText').textContent='Happy Halloween, '+S.names[S.fm.team]+'!'});
+$('fmBack').addEventListener('click',()=>{clearInterval(timerId);timerId=null;S.fm.done=false;show('winner');renderWinner()});
+$('fmDone').addEventListener('click',()=>{clearInterval(timerId);timerId=null;S.fm.done=true;show('winner');renderWinner()});
 
 /* Cross-window sync: the kids' board follows whatever the host does */
 window.addEventListener('storage',e=>{
   if(e.key!=='hfeud')return;const n=load();if(!n)return;
-  const prevRev=S.revealed.length,prevStr=S.strikes.reduce((a,b)=>a+b,0),prevScreen=S.screen;S=n;
-  if(S.screen==='game'&&prevScreen==='game'&&S.strikes.reduce((a,b)=>a+b,0)>prevStr)flashStrike();
+  const prevRev=S.revealed.length,prevFlash=S.strikeFlash||0,prevScreen=S.screen;S=n;
+  if(S.screen==='game'&&prevScreen==='game'&&(S.strikeFlash||0)>prevFlash)flashStrike();
   else if(S.screen==='game'&&prevScreen==='game'&&S.revealed.length>prevRev)beep('ding');
   ['setup','game','fast','winner'].forEach(id=>{$(id).hidden=(id!==S.screen)});
   if(S.screen==='game')render();else if(S.screen==='fast'){renderFM();drawTimer()}else if(S.screen==='winner')renderWinner();else buildSetup();
@@ -572,6 +623,7 @@ window.addEventListener('storage',e=>{
   const sc=S.screen||'setup';show(sc);
   if(sc==='game')render();else if(sc==='fast'){renderFM()}else if(sc==='winner')renderWinner();
   drawTimer();
+  if(MODE==='board'){$('soundhint').hidden=false}
 })();
 </script>
 </body>
