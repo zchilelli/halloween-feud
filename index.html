@@ -125,7 +125,6 @@ body.board .waiting{display:block}
 .scorebox td.total{font-size:1.6rem;font-weight:900;color:var(--candy)}
 .scorebox td.ctl{white-space:nowrap}
 .scorebox td.ctl button{margin:0 2px}
-.scorebox .addbtn{background:var(--tc);color:var(--night);font-size:1rem;padding:.5em .9em}
 .scorebox .wrapx{overflow-x:auto}
 body.board .scorebox{display:none}
 body.board .team .score.hidden{display:none}
@@ -194,7 +193,7 @@ body.board .bigtimer{display:block}
 
   <div class="panelbox onlyhost howto">
     <strong>Two screens (recommended):</strong> open the <a class="btnlink small" href="#host" target="_blank" rel="noopener">Host view</a> on your laptop screen and the <a class="btnlink small" href="#board" target="_blank" rel="noopener">Kids' board</a> on the projector. The host view shows you every answer; the kids' board only shows what you reveal. They stay in sync as long as both are open in the same browser on the same computer.<br><br>
-    <strong>How to run it:</strong> Read the question out loud. When a kid gives an answer that is on the board, click its tile (or press <kbd>1</kbd> to <kbd>5</kbd>). Wrong answer? Hit <strong>Strike</strong> (or <kbd>X</kbd>). When the round is over, click the team that earned the points. Made a mistake? <strong>Undo last points</strong> and <strong>Redo this round</strong> are on the host bar, and the scoreboard under the teams has +5 / -5 buttons for quick fixes. Scores and the scoreboard are visible on your host view only. Scores are hidden from the kids' board until you click <strong>Show scores on kids' board</strong> (good for a dramatic reveal). <strong>Start over</strong> wipes everything for the next class.
+    <strong>How to run it:</strong> Read the question out loud. When a kid gives an answer that is on the board, click its tile (or press <kbd>1</kbd> to <kbd>5</kbd>). Wrong answer? Hit <strong>Strike</strong> (or <kbd>X</kbd>). Pick the team that is playing first (the <strong>Playing</strong> buttons): every tile you flip adds its points to that team instantly, on their card and in the scoreboard. Three strikes? Switch to the other team by clicking <strong>Steal</strong> next to their name if their one guess is on the board; they take every point on it. Made a mistake? <strong>Undo last answer</strong> hides the tile and takes the points back, <strong>Redo this round</strong> starts the round over, and the scoreboard has manual +/- fixes. Scores and the scoreboard are visible on your host view only. Score numbers are hidden from the kids' board until you click <strong>Show scores on kids' board</strong> (good for a dramatic reveal). <strong>Start over</strong> wipes everything for the next class.
   </div>
 
   <button class="bigstart onlyhost" id="startBtn">Let's play the Feud!</button>
@@ -228,8 +227,9 @@ body.board .bigtimer{display:block}
       <button class="ghostbtn small" id="resetBtn">Start over</button>
     </div>
     <div class="row">
-      <div class="grp"><span class="label">Give points to:</span><span id="awardBtns" style="display:contents"></span></div>
-      <button class="ghostbtn" id="undoAward">Undo last points</button>
+      <div class="grp"><span class="label">Steal the board:</span><span id="awardBtns" style="display:contents"></span></div>
+      <button class="ghostbtn" id="undoAward">Undo last answer</button>
+      <span class="label" id="unclaimed" hidden style="color:var(--strike);width:auto">Tiles flipped with no team selected = no points</span>
       <button class="ghostbtn small" id="showScoresBtn">Show scores on kids' board</button>
       <span style="flex:1"></span>
       <button id="nextBtn">Next round</button>
@@ -311,7 +311,7 @@ let S=null;
 const $=id=>document.getElementById(id);
 function freshState(){
   return {screen:'setup',teamCount:2,names:TEAM_DEFAULTS.map(t=>t[0]),picked:DEFAULT_PICK.slice(),round:0,scores:[0,0,0,0,0],log:[],showScores:false,
-    revealed:[],strikes:[0,0,0,0,0],playing:null,awarded:false,lastAward:null,sound:true,
+    revealed:[],strikes:[0,0,0,0,0],playing:null,sound:true,
     fm:{team:0,picks:[[null,null,null,null,null],[null,null,null,null,null]],timeLeft:20}};
 }
 function save(){if(MODE==='board')return;try{localStorage.setItem('hfeud',JSON.stringify(S))}catch(e){}}
@@ -372,32 +372,30 @@ $('startBtn').addEventListener('click',()=>{
   for(let i=0;i<N();i++){S.names[i]=($('tname'+i).value.trim())||TEAM_DEFAULTS[i][0]}
   if(S.picked.length===0)S.picked=DEFAULT_PICK.slice();
   S.picked=ROUNDS.map(r=>r.id).filter(id=>S.picked.includes(id));
-  S.round=0;S.scores=[0,0,0,0,0];S.log=[];S.showScores=false;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;S.lastAward=null;
+  S.round=0;S.scores=[0,0,0,0,0];S.log=[];S.showScores=false;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;
   setMsg('Read the question, then run the Face-Off.');
   show('game');render();
 });
 
 /* Game render */
 function setMsg(t){$('msg').textContent=t}
+function roundPts(){return (S.log||[]).filter(e=>e.round===S.round&&e.kind!=='fix').reduce((a,e)=>a+e.pts,0)}
 function recalc(){S.scores=[0,0,0,0,0];(S.log||[]).forEach(e=>{S.scores[e.team]+=e.pts})}
 function addLog(team,pts,round,kind){S.log=S.log||[];S.log.push({team,pts,round,kind});recalc()}
 function renderScorebox(){
   const box=$('scorebox');if(!box)return;const R=roundsPicked().length;
   let h='<div class="head"><span class="label">Scoreboard (host only)</span><span class="label">Round '+(S.round+1)+' of '+R+(isDouble()?' &middot; DOUBLE':'')+'</span></div><div class="wrapx"><table><thead><tr><th>Team</th>';
   for(let r=0;r<R;r++)h+='<th>R'+(r+1)+'</th>';
-  h+='<th>Fixes</th><th>Total</th><th>Add this round</th><th>Quick fix</th></tr></thead><tbody>';
+  h+='<th>Fixes</th><th>Total</th><th>Manual fix</th></tr></thead><tbody>';
   for(let i=0;i<N();i++){
     h+='<tr style="--tc:'+color(i)+'"><td class="tname">'+S.names[i].replace(/</g,'&lt;')+'</td>';
-    for(let r=0;r<R;r++){const v=(S.log||[]).filter(e=>e.team===i&&e.round===r&&e.kind==='round').reduce((a,e)=>a+e.pts,0);h+='<td class="'+(r===S.round?'cur':'')+'">'+(v||(r<S.round||r===S.round?'0':''))+'</td>'}
+    for(let r=0;r<R;r++){const v=(S.log||[]).filter(e=>e.team===i&&e.round===r&&e.kind!=='fix').reduce((a,e)=>a+e.pts,0);h+='<td class="'+(r===S.round?'cur':'')+'">'+(v||(r<S.round||r===S.round?'0':''))+'</td>'}
     const fx=(S.log||[]).filter(e=>e.team===i&&e.kind==='fix').reduce((a,e)=>a+e.pts,0);
     h+='<td>'+(fx>0?'+':'')+fx+'</td><td class="total">'+S.scores[i]+'</td>';
-    h+='<td class="ctl"><button class="addbtn" data-award="'+i+'"'+(S.awarded?' disabled':'')+'>+ <span id="potbtn'+i+'">0</span></button></td>';
-    h+='<td class="ctl"><button class="ghostbtn tiny" data-fix="'+i+',-5">-5</button><button class="ghostbtn tiny" data-fix="'+i+',5">+5</button></td></tr>';
+    h+='<td class="ctl"><button class="ghostbtn tiny" data-fix="'+i+',-10">-10</button><button class="ghostbtn tiny" data-fix="'+i+',-5">-5</button><button class="ghostbtn tiny" data-fix="'+i+',5">+5</button><button class="ghostbtn tiny" data-fix="'+i+',10">+10</button></td></tr>';
   }
   h+='</tbody></table></div>';
   box.innerHTML=h;
-  const pot=Number($('pot').textContent);box.querySelectorAll('[id^=potbtn]').forEach(e=>e.textContent=pot);
-  box.querySelectorAll('[data-award]').forEach(b=>b.addEventListener('click',()=>award(Number(b.dataset.award))));
   box.querySelectorAll('[data-fix]').forEach(b=>b.addEventListener('click',()=>{const [t,d]=b.dataset.fix.split(',').map(Number);if(S.scores[t]+d<0)return;addLog(t,d,S.round,'fix');setMsg(S.names[t]+' now has '+S.scores[t]+'.');render()}));
 }
 function teamButton(i,label,onclick){const b=document.createElement('button');b.className='teambtn';b.style.setProperty('--tc',color(i));b.textContent=label;b.addEventListener('click',onclick);return b}
@@ -427,9 +425,11 @@ function render(){
   const pb=$('playBtns');pb.innerHTML='';const ab=$('awardBtns');ab.innerHTML='';
   for(let i=0;i<N();i++){
     pb.append(teamButton(i,shortName(i),()=>{S.playing=i;setMsg(S.names[i]+' is playing. Go down the line!');render()}));
-    const a=teamButton(i,shortName(i),()=>award(i));a.disabled=S.awarded;ab.append(a);
+    const st=teamButton(i,shortName(i),()=>steal(i));st.disabled=(S.playing===i)||roundPts()===0;ab.append(st);
   }
-  $('undoAward').disabled=!S.lastAward;
+  $('undoAward').disabled=!(S.log||[]).some(e=>e.round===S.round&&e.kind!=='fix');
+  const unclaimed=S.revealed.filter(i=>!(S.log||[]).some(e=>e.round===S.round&&e.kind==='answer'&&e.tile===i)).length;
+  $('unclaimed').hidden=unclaimed===0||S.playing!==null;
   $('showScoresBtn').textContent=(S.showScores?'Hide':'Show')+' scores on kids\' board';
   renderScorebox();
   $('hostkey').innerHTML='<b>Answer key:</b> '+r.a.map((a,i)=>(i+1)+'. '+a+' ('+PTS[i]*mult()+')').join(' &nbsp;&middot;&nbsp; ');
@@ -438,32 +438,43 @@ function render(){
 }
 function reveal(i){
   if(S.revealed.includes(i))return;
-  S.revealed.push(i);beep('ding');const r=cur();
-  if(S.revealed.length===r.a.length)setMsg('Whole board cleared! Give the points to the team that earned them.');
-  else setMsg('"'+r.a[i]+'" is on the board for '+(PTS[i]*mult())+' points!');
+  S.revealed.push(i);beep('ding');const r=cur();const p=PTS[i]*mult();
+  if(S.playing!==null){
+    S.log=S.log||[];S.log.push({team:S.playing,pts:p,round:S.round,kind:'answer',tile:i});recalc();
+    if(S.revealed.length===r.a.length){beep('win');setMsg('Board cleared! '+S.names[S.playing]+' sweeps the round with '+roundPts()+' points.')}
+    else setMsg('"'+r.a[i]+'" for '+p+' points to '+S.names[S.playing]+'!');
+  }else setMsg('"'+r.a[i]+'" is on the board ('+p+'), but no team is selected, so nobody got the points. Pick a team first, or use Undo.');
   render();
+}
+function steal(team){
+  const pts=roundPts();if(!pts)return;
+  const entries=(S.log||[]).filter(e=>e.round===S.round&&e.kind!=='fix');
+  S.log.push({team,pts,round:S.round,kind:'steal',from:entries.map(e=>({team:e.team,pts:e.pts}))});
+  entries.forEach(e=>{S.log.push({team:e.team,pts:-e.pts,round:S.round,kind:'stealtake'})});
+  recalc();beep('win');setMsg('STEAL! '+S.names[team]+' takes all '+pts+' points on the board!');S.playing=team;render();
 }
 function strike(){
   flashStrike();const team=S.playing;
   if(team===null){setMsg('BZZZ! Pick which team is playing so strikes count against them.');return}
   S.strikes[team]=Math.min(3,S.strikes[team]+1);
-  if(S.strikes[team]===3)setMsg('Three strikes for '+S.names[team]+'! Another team huddles for 10 seconds, then the captain gives ONE guess to steal.');
+  if(S.strikes[team]===3)setMsg('Three strikes for '+S.names[team]+'! Another team huddles 10 seconds, captain gives ONE guess. If it is on the board, click Steal for that team.');
   else setMsg('Strike '+S.strikes[team]+' for '+S.names[team]+'.');
   render();
 }
-function award(team){
-  if(S.awarded)return;const pot=Number($('pot').textContent);
-  addLog(team,pot,S.round,'round');S.awarded=true;S.lastAward={team,pts:pot};beep('win');
-  setMsg(pot+' points to '+S.names[team]+'! Click Next round when you are ready.');render();
-}
 $('strikeBtn').addEventListener('click',strike);
-$('revealAll').addEventListener('click',()=>{const r=cur();r.a.forEach((_,i)=>{if(!S.revealed.includes(i))S.revealed.push(i)});beep('ding');setMsg("Let's see what else was on the board!");render()});
-$('undoAward').addEventListener('click',()=>{if(!S.lastAward)return;const idx=(S.log||[]).map(e=>e.kind).lastIndexOf('round');if(idx>=0)S.log.splice(idx,1);recalc();setMsg('Took back '+S.lastAward.pts+' points from '+S.names[S.lastAward.team]+'.');S.lastAward=null;S.awarded=false;render()});
-$('resetRound').addEventListener('click',()=>{S.log=(S.log||[]).filter(e=>!(e.round===S.round&&e.kind==='round'));recalc();S.lastAward=null;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;setMsg('Round reset. Earlier scores are safe. Read the question again!');render()});
+$('revealAll').addEventListener('click',()=>{const r=cur();r.a.forEach((_,i)=>{if(!S.revealed.includes(i))S.revealed.push(i)});beep('ding');setMsg("Let's see what else was on the board! (No points for these.)");render()});
+$('undoAward').addEventListener('click',()=>{
+  const L=S.log||[];let idx=-1;for(let k=L.length-1;k>=0;k--){if(L[k].round===S.round&&(L[k].kind==='answer'||L[k].kind==='steal')){idx=k;break}}
+  if(idx<0)return;const e=L[idx];
+  if(e.kind==='answer'){L.splice(idx,1);S.revealed=S.revealed.filter(t=>t!==e.tile);setMsg('Undid "'+cur().a[e.tile]+'" ('+e.pts+' points) for '+S.names[e.team]+'. The tile is hidden again.')}
+  else{S.log=L.filter((x,k)=>!(k>=idx&&x.round===S.round&&(x.kind==='steal'||x.kind==='stealtake')));setMsg('Undid the steal. Points go back to who answered.')}
+  recalc();render();
+});
+$('resetRound').addEventListener('click',()=>{S.log=(S.log||[]).filter(e=>!(e.round===S.round&&e.kind!=='fix'));recalc();S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;setMsg('Round reset. Earlier scores are safe. Read the question again!');render()});
 $('showScoresBtn').addEventListener('click',()=>{S.showScores=!S.showScores;render()});
 $('nextBtn').addEventListener('click',()=>{
   if(S.round+1>=roundsPicked().length){show('winner');renderWinner();return}
-  S.round++;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.awarded=false;S.lastAward=null;
+  S.round++;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;
   setMsg(isDouble()?'DOUBLE POINTS round. Anything can happen!':'Read the question, then run the Face-Off.');
   $('hostkey').classList.remove('show');render();
 });
@@ -552,6 +563,8 @@ window.addEventListener('storage',e=>{
   if(!S.fm)S.fm={team:0,picks:[[null,null,null,null,null],[null,null,null,null,null]],timeLeft:20};
   if(!S.teamCount)S.teamCount=2;while(S.scores.length<5)S.scores.push(0);while(S.strikes.length<5)S.strikes.push(0);while(S.names.length<5)S.names.push(TEAM_DEFAULTS[S.names.length][0]);
   S.revealed=S.revealed.filter(i=>i<5);
+  if(S.awarded!==undefined){delete S.awarded;delete S.lastAward}
+  if(S.log)S.log.forEach(e=>{if(e.kind==='round')e.kind='fix'});
   if(!S.log){S.log=[];S.scores.forEach((v,i)=>{if(v)S.log.push({team:i,pts:v,round:0,kind:'fix'})})}
   if(S.showScores===undefined)S.showScores=false;
   buildSetup();
