@@ -100,12 +100,12 @@ h1{font-family:var(--display);font-weight:400;letter-spacing:.04em;margin:0;colo
 body.board .wrap{max-width:1700px;gap:1vh;padding-top:.8vh;padding-bottom:.8vh}
 body.board .topbar h1{font-size:clamp(1.4rem,4vh,2.6rem)}
 body.board .center{gap:1.2vh}
-body.board .question{font-size:clamp(1.3rem,4.6vh,3rem);min-height:0;padding:1.6vh 24px}
+body.board .question{font-size:clamp(1.3rem,5vh,3.2rem);min-height:0;padding:1.4vh 24px}
 body.board .pot{font-size:clamp(.8rem,2vh,1.2rem)}
 body.board .pot b{font-size:clamp(1.4rem,4vh,2.8rem)}
-body.board .tiles{max-width:1100px;gap:1.1vh}
+body.board .tiles{max-width:1250px;gap:1.1vh}
 body.board .tile{height:clamp(44px,8.6vh,110px)}
-body.board .tile .face{font-size:clamp(1.1rem,4vh,2.5rem);padding:0 24px}
+body.board .tile .face{font-size:clamp(1.1rem,5.2vh,3rem);padding:0 24px}
 body.board .tile .front{font-size:clamp(1.3rem,4.6vh,3.2rem)}
 body.board .tile .back .pts{font-size:clamp(1.1rem,3.8vh,2.4rem)}
 body.board .teamsrow{gap:1.2vh}
@@ -124,7 +124,32 @@ body.board .fm .total{font-size:1.5rem;padding:1.5vh}
 body.board .fm .total b{font-size:clamp(2rem,7vh,4rem)}
 body.board .bigtimer{font-size:clamp(2.5rem,9vh,5rem);line-height:1}
 body.board .fm .cell.veil .ans{visibility:hidden}
+body.board .fm .total.veil{visibility:hidden}
 body.board .fm .cell.veil::after{content:'hidden';color:var(--muted);font-size:1rem;letter-spacing:.12em;text-transform:uppercase;text-align:center}
+
+/* Host view compaction so a round fits a 1366x768 laptop without scrolling */
+body.host .teamsrow{display:none}
+.scorebox .strk{display:inline-flex;gap:3px;vertical-align:middle}
+.scorebox .strk span{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);display:inline-block}
+.scorebox .strk span.on{background:var(--strike);border-color:var(--strike)}
+.scorebox tr.playing td{background:rgba(255,216,77,.10)}
+.scorebox td.tname small{display:block;font-family:var(--body);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--candy)}
+body.host .tile,body.both .tile{height:clamp(44px,6.2vh,60px)}
+body.host .tiles,body.both .tiles{gap:6px;max-width:760px}
+body.host .question,body.both .question{min-height:0;padding:10px 16px;font-size:clamp(1.1rem,2.2vw,1.5rem)}
+body.host .pot b,body.both .pot b{font-size:1.4rem}
+body.host .team,body.both .team{padding:8px;gap:2px}
+body.host .team .score,body.both .team .score{font-size:1.9rem}
+body.host .team .name,body.both .team .name{font-size:1.2rem}
+body.host .team .strikes span,body.both .team .strikes span{width:22px;height:22px}
+body.host .topbar h1,body.both .topbar h1{font-size:1.4rem}
+body.host .scorebox,body.both .scorebox{padding:8px 12px;gap:6px}
+body.host .scorebox td,body.both .scorebox td{padding:3px 6px}
+body.host .scorebox td.tname,body.both .scorebox td.tname{font-size:1.05rem}
+body.host .scorebox td.total,body.both .scorebox td.total{font-size:1.2rem}
+body.host .hostbar,body.both .hostbar{padding:8px;gap:6px}
+body.host .wrap,body.both .wrap{gap:8px;padding-top:8px}
+body.host .center,body.both .center{gap:8px}
 
 /* Host and board modes */
 body.host .tile .front{flex-direction:column;justify-content:center;padding-bottom:14px}
@@ -161,7 +186,7 @@ body.board .team .score.hidden{display:none}
 body.board .team .score.hidden+.hiddenlabel{display:block}
 .hiddenlabel{display:none;font-size:clamp(2.4rem,5.5vw,4.2rem);font-weight:900;line-height:1;color:var(--muted)}
 
-.soundhint{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:40;background:var(--candy);color:var(--night);font-size:1rem;animation:pulse 1.4s infinite}
+.soundhint{position:fixed;left:16px;top:10px;z-index:40;background:var(--candy);color:var(--night);font-size:1rem;animation:pulse 1.4s infinite}
 body:not(.board) .soundhint{display:none}
 
 /* Strike overlay */
@@ -280,7 +305,7 @@ body.board .bigtimer{display:block}
   <div class="bigtimer" id="bigtimer">20</div>
   <div class="fm" id="fmGrid"></div>
   <div class="hostbar">
-    <div class="msg" id="fmMsg">Player 1 answers all five in 20 seconds while Player 2 waits in the hall. Before Player 2 comes back, click Hide Player 1 answers.</div>
+    <div class="msg" id="fmMsg">Player 1 answers all five in 20 seconds while Player 2 faces the wall with ears covered. Click Hide Player 1 answers before Player 2 turns around.</div>
     <div class="row">
       <span class="timer" id="timer">20</span>
       <button id="timerBtn">Start 20 seconds</button>
@@ -301,6 +326,7 @@ body.board .bigtimer{display:block}
   <div class="scores" id="finalScores"></div>
   <p style="color:var(--muted);margin:0">Give yourselves a round of applause. Happy Halloween!</p>
   <div class="hostbar onlyhost" style="position:static;flex-direction:row;flex-wrap:wrap">
+    <button id="tiebreakBtn" hidden>Play the tiebreaker round</button>
     <button id="playFM">Play Fast Money</button>
     <button class="ghostbtn" id="backToBoard">Back to the board</button>
     <button class="ghostbtn" id="againBtn">Play again (new class)</button>
@@ -317,13 +343,13 @@ const ROUNDS=[
  {id:'see',q:'Name something you see on Halloween night.',a:['Kids in costumes',"Jack-o'-lanterns",'Candy','Spooky decorations','The moon']},
  {id:'costume',q:'Name a popular Halloween costume.',a:['Witch','Superhero','Ghost','Princess','Skeleton']},
  {id:'treat',q:'Name a treat you hope to get while trick-or-treating.',a:['Chocolate bar','Lollipop','Gummy candy','Candy corn','Full-size candy bar']},
- {id:'carve',q:'Name something you carve or decorate for Halloween.',a:['Pumpkin','Your house','Cookies or cupcakes','Your classroom','Your costume']},
- {id:'witch',q:'Name something a witch might have.',a:['Broomstick','Pointy hat','Cauldron','Black cat','Magic wand']},
+ {id:'carve',q:'Name something you decorate for Halloween.',a:['A pumpkin','Your house','Cookies or cupcakes','Your classroom','Your costume']},
+ {id:'witch',q:'Name something a witch might have.',a:['Broomstick','Pointy hat','Cauldron','Black cat','Spell book']},
  {id:'farm',q:'Name something you do at a pumpkin farm in the fall.',a:['Pick a pumpkin','Go on a hayride','Walk through a corn maze','Eat apple cider donuts','Pet the animals']},
  {id:'party',q:'Name something you do at a Halloween party.',a:['Eat candy','Play games','Dance','Costume contest','Decorate pumpkins']},
  {id:'creature',q:'Name a creature you might see as a Halloween decoration.',a:['Skeleton','Ghost','Spider','Bat','Mummy']},
  {id:'orange',q:'Name something orange.',a:['Pumpkin','Carrot','An orange (the fruit)','Fall leaves','Candy corn']},
- {id:'boo',q:'Tiebreaker: Name a word that rhymes with "boo."',a:['Shoe','Moo','Blue','Zoo','Glue']}
+ {id:'boo',q:'Name a word that rhymes with "boo."',a:['Shoe','Moo','Blue','Zoo','Glue']}
 ];
 const PTS=[20,10,10,5,5]; // rank 1 to 5
 const FAST=[
@@ -359,12 +385,12 @@ function shortName(i){return S.names[i].replace(/^team\s+/i,'')}
 /* Sounds */
 let AC=null,boardAlive=0,bc=null;
 try{bc=new BroadcastChannel('hfeud');bc.onmessage=e=>{if(e.data==='board-alive')boardAlive=Date.now()}}catch(e){}
-if(MODE==='board'){setInterval(()=>{try{bc&&bc.postMessage('board-alive')}catch(e){}},1500)}
-function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const h=$('soundhint');if(h&&AC.state!=='suspended')h.hidden=true}catch(e){}}
+if(MODE==='board'){setInterval(()=>{try{if(AC&&AC.state==='running')bc&&bc.postMessage('board-alive')}catch(e){}},1500)}
+function unlockAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const done=()=>{const h=$('soundhint');if(h&&AC.state==='running'){h.hidden=true;if(MODE==='board'&&bc)bc.postMessage('board-alive')}};if(AC.state==='suspended')AC.resume().then(done);else done()}catch(e){}}
 window.addEventListener('pointerdown',unlockAudio);window.addEventListener('keydown',unlockAudio);
 function beep(type){
   if(!S.sound)return;
-  if(MODE==='host'&&Date.now()-boardAlive<4000)return; /* board window is open on this computer: let it carry the sound */
+  if(MODE!=='board'&&Date.now()-boardAlive<4000)return; /* board window is open on this computer: let it carry the sound */
   try{
     AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
     const t=AC.currentTime;
@@ -372,7 +398,7 @@ function beep(type){
     if(type==='ding'){tone(880,0,.5,.3,'sine');tone(1320,.08,.5,.3,'sine')}
     else if(type==='buzz'){
       /* Spooky strike: thunder crack + ghost wail + low rumble, about 1.4s */
-      const master=AC.createGain();master.gain.value=.9;master.connect(AC.destination);
+      const master=AC.createGain();master.gain.value=.65;master.connect(AC.destination);
       const n=AC.sampleRate*0.5,buf=AC.createBuffer(1,n,AC.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.5);
       const src=AC.createBufferSource();src.buffer=buf;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(1800,t);lp.frequency.exponentialRampToValueAtTime(200,t+.5);const ng=AC.createGain();ng.gain.value=.6;src.connect(lp).connect(ng).connect(master);src.start(t);
       const w=AC.createOscillator(),wg=AC.createGain(),vib=AC.createOscillator(),vg=AC.createGain();w.type='sawtooth';w.frequency.setValueAtTime(520,t+.05);w.frequency.exponentialRampToValueAtTime(110,t+1.3);vib.frequency.value=6;vg.gain.value=18;vib.connect(vg).connect(w.frequency);wg.gain.setValueAtTime(.0001,t);wg.gain.exponentialRampToValueAtTime(.22,t+.08);wg.gain.exponentialRampToValueAtTime(.0001,t+1.4);const wf=AC.createBiquadFilter();wf.type='lowpass';wf.frequency.value=1200;w.connect(wf).connect(wg).connect(master);vib.start(t);w.start(t);w.stop(t+1.45);vib.stop(t+1.45);
@@ -387,7 +413,7 @@ function flashStrike(){const ov=$('strikeOverlay');ov.classList.remove('show');v
 function show(name){S.screen=name;['setup','game','fast','winner'].forEach(id=>{$(id).hidden=(id!==name)});save()}
 function roundsPicked(){return S.picked.map(id=>ROUNDS.find(r=>r.id===id)).filter(Boolean)}
 function cur(){return roundsPicked()[S.round]}
-function isDouble(){return roundsPicked().length>1&&S.round===roundsPicked().length-1}
+function isDouble(){const b=S.baseLen||roundsPicked().length;return b>1&&S.round===b-1}
 function mult(){return isDouble()?2:1}
 
 /* Setup screen */
@@ -397,7 +423,7 @@ function buildSetup(){
   const f=$('teamsForm');f.innerHTML='';
   for(let i=0;i<N();i++){
     const l=document.createElement('label');l.style.setProperty('--tc',color(i));
-    const inp=document.createElement('input');inp.id='tname'+i;inp.maxLength=24;inp.value=S.names[i];
+    const inp=document.createElement('input');inp.id='tname'+i;inp.maxLength=30;inp.value=S.names[i];
     inp.addEventListener('input',()=>{S.names[i]=inp.value;save()});
     l.append(document.createTextNode('Team '+(i+1)),inp);f.append(l);
   }
@@ -406,20 +432,20 @@ function buildSetup(){
     const l=document.createElement('label');
     const c=document.createElement('input');c.type='checkbox';c.id='pick_'+r.id;c.checked=S.picked.includes(r.id);
     c.addEventListener('change',()=>{if(c.checked){if(!S.picked.includes(r.id))S.picked.push(r.id)}else S.picked=S.picked.filter(x=>x!==r.id);save()});
-    l.append(c,document.createTextNode(r.q));box.append(l);
+    l.append(c,document.createTextNode(r.q+(r.id==='boo'?' (saved as the tiebreaker if you leave it unchecked)':'')));box.append(l);
   });
 }
 $('startBtn').addEventListener('click',()=>{
   for(let i=0;i<N();i++){S.names[i]=($('tname'+i).value.trim())||TEAM_DEFAULTS[i][0]}
   if(S.picked.length===0)S.picked=DEFAULT_PICK.slice();
-  S.picked=ROUNDS.map(r=>r.id).filter(id=>S.picked.includes(id));
+  S.picked=ROUNDS.map(r=>r.id).filter(id=>S.picked.includes(id));S.baseLen=S.picked.length;
   S.round=0;S.scores=[0,0,0,0,0];S.log=[];S.showScores=false;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;
   setMsg('Read the question, then run the Face-Off.');
   show('game');render();
 });
 
 /* Game render */
-function setMsg(t){$('msg').textContent=t}
+function setMsg(t){S.msg=t;$('msg').textContent=t}
 function roundPts(){return (S.log||[]).filter(e=>e.round===S.round&&e.kind!=='fix').reduce((a,e)=>a+e.pts,0)}
 function recalc(){S.scores=[0,0,0,0,0];(S.log||[]).forEach(e=>{S.scores[e.team]+=e.pts})}
 function addLog(team,pts,round,kind){S.log=S.log||[];S.log.push({team,pts,round,kind});recalc()}
@@ -429,7 +455,7 @@ function renderScorebox(){
   for(let r=0;r<R;r++)h+='<th>R'+(r+1)+'</th>';
   h+='<th>Fixes</th><th>Total</th><th>Manual fix</th></tr></thead><tbody>';
   for(let i=0;i<N();i++){
-    h+='<tr style="--tc:'+color(i)+'"><td class="tname">'+esc(S.names[i])+'</td>';
+    h+='<tr class="'+(S.playing===i?'playing':'')+'" style="--tc:'+color(i)+'"><td class="tname">'+esc(S.names[i])+' <span class="strk">'+[0,1,2].map(k=>'<span class="'+(k<S.strikes[i]?'on':'')+'"></span>').join('')+'</span>'+(S.playing===i?'<small>Playing now</small>':'')+'</td>';
     for(let r=0;r<R;r++){const v=(S.log||[]).filter(e=>e.team===i&&e.round===r&&e.kind!=='fix').reduce((a,e)=>a+e.pts,0);h+='<td class="'+(r===S.round?'cur':'')+'">'+(v||(r<S.round||r===S.round?'0':''))+'</td>'}
     const fx=(S.log||[]).filter(e=>e.team===i&&e.kind==='fix').reduce((a,e)=>a+e.pts,0);
     h+='<td>'+(fx>0?'+':'')+fx+'</td><td class="total">'+S.scores[i]+'</td>';
@@ -466,7 +492,7 @@ function render(){
   const pb=$('playBtns');pb.innerHTML='';const ab=$('awardBtns');ab.innerHTML='';
   for(let i=0;i<N();i++){
     pb.append(teamButton(i,shortName(i),()=>selectTeam(i)));
-    const st=teamButton(i,shortName(i),()=>steal(i));st.disabled=(S.playing===i)||roundPts()===0;ab.append(st);
+    const st=teamButton(i,shortName(i),()=>steal(i));st.disabled=(S.playing===i)||roundPts()===0||(S.log||[]).some(e=>e.round===S.round&&e.kind==='steal');ab.append(st);
   }
   $('undoAward').disabled=!(S.log||[]).some(e=>e.round===S.round&&e.kind!=='fix');
   const unclaimed=S.revealed.filter(i=>!(S.log||[]).some(e=>e.round===S.round&&e.kind==='answer'&&e.tile===i)).length;
@@ -496,11 +522,13 @@ function selectTeam(i){
 function steal(team){
   const pts=roundPts();if(!pts)return;
   const entries=(S.log||[]).filter(e=>e.round===S.round&&e.kind!=='fix');
-  S.log.push({team,pts,round:S.round,kind:'steal',from:entries.map(e=>({team:e.team,pts:e.pts}))});
+  S.log.push({team,pts,round:S.round,kind:'steal',prevPlaying:S.playing,from:entries.map(e=>({team:e.team,pts:e.pts}))});
   entries.forEach(e=>{S.log.push({team:e.team,pts:-e.pts,round:S.round,kind:'stealtake'})});
   recalc();beep('win');setMsg('STEAL! '+S.names[team]+' takes all '+pts+' points on the board!');S.playing=team;render();
 }
+let lastStrike=0;
 function strike(){
+  if(Date.now()-lastStrike<700)return;lastStrike=Date.now();
   S.strikeFlash=(S.strikeFlash||0)+1;flashStrike();const team=S.playing;
   if(team===null){setMsg('BZZZ! Pick which team is playing so strikes count against them.');save();return}
   S.strikes[team]=Math.min(3,S.strikes[team]+1);
@@ -514,12 +542,14 @@ $('undoAward').addEventListener('click',()=>{
   const L=S.log||[];let idx=-1;for(let k=L.length-1;k>=0;k--){if(L[k].round===S.round&&(L[k].kind==='answer'||L[k].kind==='steal')){idx=k;break}}
   if(idx<0)return;const e=L[idx];
   if(e.kind==='answer'){L.splice(idx,1);S.revealed=S.revealed.filter(t=>t!==e.tile);setMsg('Undid "'+cur().a[e.tile]+'" ('+e.pts+' points) for '+S.names[e.team]+'. The tile is hidden again.')}
-  else{S.log=L.filter((x,k)=>!(k>=idx&&x.round===S.round&&(x.kind==='steal'||x.kind==='stealtake')));setMsg('Undid the steal. Points go back to who answered.')}
+  else{if(e.prevPlaying!==undefined)S.playing=e.prevPlaying;S.log=L.filter((x,k)=>!(k>=idx&&x.round===S.round&&(x.kind==='steal'||x.kind==='stealtake')));setMsg('Undid the steal. Points go back to who answered.')}
   recalc();render();
 });
 $('resetRound').addEventListener('click',()=>{S.log=(S.log||[]).filter(e=>!(e.round===S.round&&e.kind!=='fix'));recalc();S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;setMsg('Round reset. Earlier scores are safe. Read the question again!');render()});
 $('showScoresBtn').addEventListener('click',()=>{S.showScores=!S.showScores;render()});
+let lastNext=0;
 $('nextBtn').addEventListener('click',()=>{
+  if(Date.now()-lastNext<700)return;lastNext=Date.now();
   if(S.round+1>=roundsPicked().length){show('winner');renderWinner();return}
   S.round++;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;
   setMsg(isDouble()?'DOUBLE POINTS round. Anything can happen!':'Read the question, then run the Face-Off.');
@@ -527,10 +557,11 @@ $('nextBtn').addEventListener('click',()=>{
 });
 $('keyBtn').addEventListener('click',()=>$('hostkey').classList.toggle('show'));
 $('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;unlockAudio();render()});
-function armReset(btn){btn.addEventListener('click',()=>{if(btn.textContent==='Really start over?'){S=freshState();buildSetup();show('setup');btn.textContent='Start over'}else{btn.textContent='Really start over?';setTimeout(()=>btn.textContent='Start over',2500)}})}
+let armedAt=0;
+function armReset(btn){btn.addEventListener('click',()=>{if(btn.textContent==='Really start over?'){if(Date.now()-armedAt<600)return;clearInterval(timerId);timerId=null;S=freshState();buildSetup();show('setup');btn.textContent='Start over'}else{armedAt=Date.now();btn.textContent='Really start over?';setTimeout(()=>btn.textContent='Start over',2500)}})}
 armReset($('resetBtn'));armReset($('resetBtn2'));
 document.addEventListener('keydown',e=>{
-  if(S.screen!=='game'||MODE==='board'||e.target.tagName==='INPUT')return;
+  if(S.screen!=='game'||MODE==='board'||e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
   if(e.key>='1'&&e.key<='5')reveal(Number(e.key)-1);
   else if(e.key==='x'||e.key==='X')strike();
   else if(e.key==='k'||e.key==='K')$('hostkey').classList.toggle('show');
@@ -540,16 +571,24 @@ document.addEventListener('keydown',e=>{
 function renderWinner(){
   S.showScores=true;
   const sc=S.scores.slice(0,N());const top=Math.max(...sc);const winners=[];sc.forEach((v,i)=>{if(v===top)winners.push(i)});
-  $('winText').textContent=winners.length>1?"It's a tie between "+winners.map(i=>S.names[i]).join(' and ')+'! Play the tiebreaker round.':S.names[winners[0]]+' wins!';
+  const tie=winners.length>1;
+  $('winText').textContent=tie?"It's a tie between "+winners.map(i=>S.names[i]).join(' and ')+'!':S.names[winners[0]]+' wins!';
+  const spare=ROUNDS.map(r=>r.id).filter(id=>!S.picked.includes(id));
+  $('tiebreakBtn').hidden=!tie||spare.length===0;$('playFM').hidden=tie;
   const fs=$('finalScores');fs.innerHTML='';
   for(let i=0;i<N();i++){const d=document.createElement('div');d.style.setProperty('--tc',color(i));d.textContent=S.names[i]+': '+S.scores[i];fs.append(d)}
   if(!S.fm.done)S.fm.team=winners[0];
   if(S.fm.done)$('winText').textContent='Happy Halloween, '+S.names[S.fm.team]+'!';
   save();
 }
+$('tiebreakBtn').addEventListener('click',()=>{
+  const spare=ROUNDS.map(r=>r.id).filter(id=>!S.picked.includes(id));if(!spare.length)return;
+  const pick=spare.includes('boo')?'boo':spare[0];S.picked.push(pick);S.round=S.picked.length-1;S.revealed=[];S.strikes=[0,0,0,0,0];S.playing=null;S.fm.done=false;
+  setMsg('TIEBREAKER! Only the tied teams play. Face-off, then go down the line.');show('game');render();
+});
 $('playFM').addEventListener('click',()=>{S.fm.done=false;S.fm.hideP1=false;S.fm.picks=[[null,null,null,null,null],[null,null,null,null,null]];S.fm.cheered=false;S.fm.timeLeft=20;timeLeft=20;show('fast');renderFM();drawTimer()});
 $('backToBoard').addEventListener('click',()=>{show('game');render()});
-$('againBtn').addEventListener('click',()=>{const keep={teamCount:S.teamCount,names:S.names,picked:S.picked,sound:S.sound};S=Object.assign(freshState(),keep);buildSetup();show('setup')});
+$('againBtn').addEventListener('click',()=>{clearInterval(timerId);timerId=null;const keep={teamCount:S.teamCount,names:S.names,picked:S.picked,sound:S.sound};S=Object.assign(freshState(),keep);buildSetup();show('setup')});
 
 /* Fast money */
 function renderFM(){
@@ -574,7 +613,7 @@ function renderFM(){
       ch.append(n,c);cell.append(ch);g.append(cell);
     });
   });
-  const t=document.createElement('div');t.className='total'+(total>=FM_TARGET?' win':'');
+  const t=document.createElement('div');t.className='total'+(total>=FM_TARGET?' win':'')+(S.fm.hideP1?' veil':'');
   t.innerHTML='<span>Fast Money total</span><b>'+total+'</b><span>'+(total>=FM_TARGET?'They did it! Fast Money champions!':'Need '+(FM_TARGET-total)+' more')+'</span>';
   g.append(t);
   $('hideP1Btn').textContent=(S.fm.hideP1?'Show':'Hide')+' Player 1 answers on board';
@@ -621,6 +660,7 @@ window.addEventListener('storage',e=>{
   buildSetup();
   $('modetag').textContent=MODE==='host'?'This is the host view. Only you see the answers.':(MODE==='both'?'Single-screen mode: this window shows everything.':'');
   const sc=S.screen||'setup';show(sc);
+  if(S.msg)$('msg').textContent=S.msg;
   if(sc==='game')render();else if(sc==='fast'){renderFM()}else if(sc==='winner')renderWinner();
   drawTimer();
   if(MODE==='board'){$('soundhint').hidden=false}
